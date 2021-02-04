@@ -227,7 +227,7 @@ const sendMessage = (messageContent: string) => async (dispatch: Dispatch, getSt
 const isValidThread = (threadId: string) => async (dispatch: Dispatch) => {
   try {
     let validationRequestOptions = { method: 'GET' };
-    let validationResponse = await fetch('/isValidThread/' + threadId, validationRequestOptions);
+    let validationResponse = await fetch('/thread/' + threadId, validationRequestOptions);
     if (validationResponse.status === 200) {
       dispatch(setThreadId(threadId));
       return true;
@@ -388,7 +388,7 @@ const updateThreadTopicName = (topicName: string, setIsSavingTopicName: React.Di
 const createThreadHelper = async () => {
   try {
     let createThreadRequestOptions = { method: 'POST' };
-    let createThreadResponse = await fetch('/createThread', createThreadRequestOptions);
+    let createThreadResponse = await fetch('/thread', createThreadRequestOptions);
     let threadId = await createThreadResponse.text();
     return threadId;
   } catch (error) {
@@ -432,7 +432,7 @@ const addThreadMemberHelper = async (threadId: string, user: User, dispatch: Dis
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     };
-    let response = await fetch('/addUser/' + threadId, addMemberRequestOptions);
+    let response = await fetch('/thread/' + threadId + '/addUser', addMemberRequestOptions);
     dispatch(setAddThreadMemberError(response.status !== MULTI_STATUS));
   } catch (error) {
     console.error('Failed at adding thread member, Error: ', error);
@@ -641,7 +641,7 @@ const getToken = async () => {
 
 const refreshTokenAsync = async (userIdentity: string) : Promise<string>=> {
   return new Promise<string>((resolve, reject) => {
-    return fetch('/refreshToken/'+ userIdentity).then(response => {
+    return fetch('/token/'+ userIdentity + '/refresh').then(response => {
       if (response.ok) {
         resolve(response.json().then(json => json.token))
       } else {
