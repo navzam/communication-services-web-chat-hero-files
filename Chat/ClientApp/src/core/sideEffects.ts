@@ -38,6 +38,7 @@ import {
   GetChatMessageResponse
 } from '@azure/communication-chat';
 import { AzureCommunicationUserCredential, RefreshOptions } from '@azure/communication-common';
+import { ChatMessageReceivedEvent } from '@azure/communication-signaling';
 
 // This function sets up the user to chat with the thread
 const addUserToThread = (displayName: string, emoji: string) => async (dispatch: Dispatch, getState: () => State) => {
@@ -117,12 +118,22 @@ const subscribeForMessage = async (chatClient: ChatClient, dispatch: Dispatch, g
   chatClient.on('chatMessageReceived', async (event) => {
     let state: State = getState();
     let messages: any = state.chat.messages !== undefined ? state.chat.messages : [];
-    if (event.sender.communicationUserId !== state.contosoClient.user.identity) {
-      // not user's own message
+
+    // Ignore user's own message, unless it's a file event (which is sent server-side, so needs to be pushed here)
+    if (event.sender.communicationUserId !== state.contosoClient.user.identity || didReceiveFileEventMessage(event)) {
       messages.push(event);
       dispatch(setMessages(messages.sort(compareMessages)));
     }
   });
+};
+
+const didReceiveFileEventMessage = (event: ChatMessageReceivedEvent): boolean => {
+  try {
+    const parsedEvent = JSON.parse(event.content);
+    return parsedEvent.event === 'FileUpload';
+  } catch (e) {
+    return false;
+  }
 };
 
 const subscribeForReadReceipt = async (
@@ -703,7 +714,10 @@ const sendReadReceiptHelper = async (chatThreadClient: ChatThreadClient, message
 
 // Files
 const sendFile = (file: File) => async (dispatch: Dispatch, getState: () => State) => {
-  const threadId = getState().thread.threadId;
+  const state = getState();
+  const userId = state.contosoClient.user.identity;
+  const userDisplayName = state.contosoClient.user.displayName;
+  const threadId = state.thread.threadId;
   if (threadId === undefined) {
     return false;
   }
@@ -711,6 +725,8 @@ const sendFile = (file: File) => async (dispatch: Dispatch, getState: () => Stat
   const data = new FormData();
   data.append('file', file);
   data.append('fileName', file.name);
+  data.append('userId', userId);
+  data.append('userDisplayName', userDisplayName);
 
   const sendFileRequestOptions: RequestInit = {
     method: 'POST',

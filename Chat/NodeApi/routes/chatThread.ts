@@ -88,7 +88,7 @@ export default function createChatThreadRouter(acsConnectionString: string, file
         }
     });
 
-    router.use('/:threadId/files', createFileRouter(fileService));
+    router.use('/:threadId/files', createFileRouter(acsConnectionString, fileService));
 
     return router;
 }
