@@ -32,7 +32,7 @@ const sendBoxStyle = mergeStyles({
   }
 });
 
-const sendIconStyle = mergeStyles({
+const sendActionIconStyle = mergeStyles({
   backgroundColor: '#EEF2F5',
   width: '2.25rem',
   height: '2.25rem',
@@ -42,4 +42,4 @@ const sendIconStyle = mergeStyles({
   fontSize: '0.875rem' // 14px
 });
 
-export { textFieldStyle, sendBoxStyle, sendIconStyle, TextFieldStyleProps };
+export { textFieldStyle, sendBoxStyle, sendActionIconStyle, TextFieldStyleProps };

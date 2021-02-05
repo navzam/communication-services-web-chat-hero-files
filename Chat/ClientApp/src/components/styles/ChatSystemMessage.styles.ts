@@ -2,7 +2,7 @@ import { mergeStyles } from '@fluentui/react';
 
 const ChatSystemMessageContainerStyle = (hasWarning: boolean) =>
   mergeStyles({
-    height: hasWarning ? '1.25rem' : '2.5rem',
+    height: hasWarning ? '1.25rem' : '3.75rem',
     display: 'flex',
     alignItems: 'center'
   });

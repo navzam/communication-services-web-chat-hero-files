@@ -1,6 +1,6 @@
 import { Stack, TextField } from '@fluentui/react';
-import { SendIcon } from '@fluentui/react-northstar';
-import React, { useState, Dispatch } from 'react';
+import { PaperclipIcon, SendIcon } from '@fluentui/react-northstar';
+import React, { useState, Dispatch, useRef } from 'react';
 
 import {
   ENTER_KEY,
@@ -10,7 +10,7 @@ import {
 } from '../../src/constants';
 import {
   sendBoxStyle,
-  sendIconStyle,
+  sendActionIconStyle,
   textFieldStyle,
   TextFieldStyleProps
 } from './styles/SendBox.styles';
@@ -23,10 +23,13 @@ interface SendboxProps {
     lastSentTypingNotificationDate: number,
     setLastSentTypingNotificationDate: Dispatch<number>
   ): void;
+  onSendFile(file: File): void;
   user: User;
 }
 
 export default (props: SendboxProps): JSX.Element => {
+  const hiddenFileInput = useRef<HTMLInputElement>(null);
+  const [fileTooLarge, setFileTooLarge] = useState<boolean>(false);
   const [textValue, setTextValue] = useState('');
   const [textValueOverflow, setTextValueOverflow] = useState(false);
   const [
@@ -55,6 +58,23 @@ export default (props: SendboxProps): JSX.Element => {
     }
     setTextValue(e.target.value);
   };
+  
+  const fileChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files === null || event.target.files.length === 0) {
+      return;
+    }
+
+    const file = event.target.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      setFileTooLarge(true);
+    } else {
+      setFileTooLarge(false);
+      props.onSendFile(file);
+    }
+
+    // Reset the file input so that choosing the same file again still triggers the onChange handler
+    event.target.value = "";
+  };
 
   return (
     <div>
@@ -80,9 +100,18 @@ export default (props: SendboxProps): JSX.Element => {
           }}
           styles={TextFieldStyleProps}
         />
+        <PaperclipIcon
+          outline
+          className={sendActionIconStyle}
+          onClick={() => {
+            if (hiddenFileInput.current !== null) {
+              hiddenFileInput.current.click();
+            }
+          }}
+        />
         <SendIcon
           outline
-          className={sendIconStyle}
+          className={sendActionIconStyle}
           onClick={() => {
             if (!textValueOverflow) {
               addMessage();
@@ -90,7 +119,13 @@ export default (props: SendboxProps): JSX.Element => {
           }}
         />
       </Stack>
-      <ChatSystemMessage textValueOverflow={textValueOverflow} />
+      <ChatSystemMessage textValueOverflow={textValueOverflow} fileTooLarge={fileTooLarge} />
+      <input
+        ref={hiddenFileInput}
+        type="file"
+        onChange={fileChanged}
+        style={{ display: 'none' }}
+      />
     </div>
   );
 };

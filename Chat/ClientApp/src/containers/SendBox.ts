@@ -2,7 +2,7 @@ import { connect } from 'react-redux';
 import { Dispatch } from 'react';
 
 import SendBox from '../components/SendBox';
-import { sendMessage, sendTypingNotification } from '../core/sideEffects';
+import { sendMessage, sendTypingNotification, sendFile } from '../core/sideEffects';
 import { MINIMUM_TYPING_INTERVAL_IN_MILLISECONDS } from '../constants';
 import { State } from '../core/reducers';
 
@@ -22,7 +22,8 @@ const mapDispatchToProps = (dispatch: any) => ({
       dispatch(sendTypingNotification());
       setLastSentTypingNotificationDate(currentDate.getTime());
     }
-  }
+  },
+  onSendFile: (file: File) => dispatch(sendFile(file)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SendBox);

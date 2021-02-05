@@ -701,6 +701,31 @@ const sendReadReceiptHelper = async (chatThreadClient: ChatThreadClient, message
   await chatThreadClient.sendReadReceipt(postReadReceiptRequest);
 };
 
+// Files
+const sendFile = (file: File) => async (dispatch: Dispatch, getState: () => State) => {
+  const threadId = getState().thread.threadId;
+  if (threadId === undefined) {
+    return false;
+  }
+
+  const data = new FormData();
+  data.append('file', file);
+  data.append('fileName', file.name);
+
+  const sendFileRequestOptions: RequestInit = {
+    method: 'POST',
+    body: data,
+  };
+
+  try {
+    const sendFileResponse = await fetch(`/thread/${threadId}/files`, sendFileRequestOptions);
+    return sendFileResponse.ok;
+  } catch (error) {
+    console.error('Failed to send file: ', error);
+    return false;
+  }
+};
+
 export {
   sendMessage,
   getMessages,
@@ -716,5 +741,6 @@ export {
   updateTypingUsers,
   isValidThread,
   updateThreadTopicName,
-  getThread
+  getThread,
+  sendFile,
 };
