@@ -8,6 +8,9 @@ import {
   PresenceAvailableIcon,
   PresenceStrokeIcon,
   RedbangIcon,
+  Attachment,
+  FilesEmptyIcon,
+  DownloadIcon,
 } from '@fluentui/react-northstar';
 import React, { useEffect, useState, createRef, useRef } from 'react';
 import { LiveAnnouncer, LiveMessage } from 'react-aria-live';
@@ -40,6 +43,12 @@ interface ChatThreadProps {
   user: User;
   users: any;
   failedMessages: string[];
+}
+
+interface FileEventMessage {
+  event: 'FileUpload';
+  fileId: string;
+  fileName: string;
 }
 
 // Reference: https://stackoverflow.com/questions/33235890/react-replace-links-in-a-text
@@ -303,6 +312,25 @@ export default (props: ChatThreadProps): JSX.Element => {
     setMessagesWithAttachedRef(newMessagesWithAttached);
   };
 
+  // Checks if a message is a file event and, if so, returns it
+  const getFileEventFromMessage = (messageContent: string): FileEventMessage | null => {
+    try {
+      const messageContentJson = JSON.parse(messageContent);
+      if (messageContentJson
+        && typeof messageContentJson === 'object'
+        && messageContentJson['event'] === 'FileUpload'
+        && typeof messageContentJson['fileId'] === 'string'
+        && typeof messageContentJson['fileName'] === 'string') {
+          return messageContentJson as FileEventMessage;
+        }
+
+        return null;
+    } catch (e) {
+      // Not a file upload event
+      return null;
+    }
+  };
+
   return (
     <Ref innerRef={chatThreadRef}>
       <Stack className={chatContainerStyle}>
@@ -324,17 +352,39 @@ export default (props: ChatThreadProps): JSX.Element => {
               styles={chatStyle}
               items={messagesWithAttached.map((message: any, index: number) => {
                 const liveAuthor = `${message.senderDisplayName} says `;
-                const messageContentItem = (
-                  <div>
-                    <LiveMessage
-                      message={`${message.mine ? '' : liveAuthor} ${
-                        message.content
-                      }`}
-                      aria-live="polite"
-                    />
-                    {renderHyperlink(message.content)}
-                  </div>
-                );
+                const fileEventMessage = getFileEventFromMessage(message.content);
+                const messageContentItem = fileEventMessage !== null
+                  ? (
+                    <div>
+                      <LiveMessage
+                        message={`${message.mine ? 'You ' : message.senderDisplayName} sent a file called ${fileEventMessage.fileName}`}
+                        aria-live="polite"
+                      />
+                      <Attachment
+                        header={fileEventMessage.fileName}
+                        description={fileEventMessage.fileId}
+                        icon={<FilesEmptyIcon outline />}
+                        action={{
+                          icon: <DownloadIcon />,
+                          onClick: () => console.log(`Download clicked for file ${fileEventMessage.fileId}`),
+                        }}
+                        actionable
+                        onClick={() => console.log(`Attachment clicked for file ${fileEventMessage.fileId}`)}
+                      />
+                    </div>
+                  )
+                  : (
+                    <div>
+                      <LiveMessage
+                        message={`${message.mine ? '' : liveAuthor} ${
+                          message.content
+                        }`}
+                        aria-live="polite"
+                      />
+                      {renderHyperlink(message.content)}
+                    </div>
+                  );
+                  
                 return {
                   gutter: message.mine ? (
                     ''
