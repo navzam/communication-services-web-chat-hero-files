@@ -10,6 +10,8 @@ import { ConversationsReducer, ConversationsState } from './ConversationsReducer
 import { MessagesReducer, MessagesState } from './MessagesReducer';
 import { ThreadReducer, ThreadState } from './ThreadReducers';
 import { ThreadMembersReducer, ThreadMembersState } from './ThreadMembersReducers';
+import { FilesActionTypes } from '../actions/FilesAction';
+import { FilesReducer, FilesState } from './FilesReducer';
 
 export interface State {
   chat: MessagesState;
@@ -17,6 +19,7 @@ export interface State {
   conversations: ConversationsState;
   thread: ThreadState;
   threadMembers: ThreadMembersState;
+  files: FilesState;
 }
 
 type TotalActions =
@@ -24,12 +27,14 @@ type TotalActions =
   | ContosoActionTypes
   | ConversationsActionTypes
   | ThreadActionTypes
-  | ThreadMembersActionTypes;
+  | ThreadMembersActionTypes
+  | FilesActionTypes;
 
 export const reducer: Reducer<State, TotalActions> = combineReducers({
   chat: MessagesReducer,
   contosoClient: ContosoReducer,
   conversations: ConversationsReducer,
   thread: ThreadReducer,
-  threadMembers: ThreadMembersReducer
+  threadMembers: ThreadMembersReducer,
+  files: FilesReducer,
 });

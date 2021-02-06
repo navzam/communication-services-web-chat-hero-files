@@ -4,7 +4,7 @@ import express from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
-import { FileMetadata, FileService } from '../services/fileService';
+import { FileMetadata, FileService, FileServiceError } from '../services/fileService';
 import * as tokenManager from '../tokenManager';
 import { extractApiChatGatewayUrl } from '../utils';
 
@@ -69,6 +69,38 @@ export default function createFileRouter(acsConnectionString: string, fileServic
         await chatThreadClient.sendMessage({ content: JSON.stringify(fileMessage) }, { senderDisplayName: body.userDisplayName });
 
         return res.sendStatus(204);
+    });
+
+    router.get('/:fileId', async (req, res) => {
+        const threadId = req.params['threadId'];
+        const fileId = req.params['fileId'];
+
+        if (threadId === undefined || threadId.length === 0) {
+            return res.status(404);
+        }
+
+        if (fileId === undefined || fileId.length === 0) {
+            return res.status(404);
+        }
+
+        let file: FileMetadata;
+        try {
+            file = await fileService.getFileMetadata(threadId, fileId);
+        } catch (e) {
+            if (e instanceof FileServiceError) {
+                res.sendStatus(404);
+                return;
+            }
+
+            throw e;
+        }
+
+        const fileStream = await fileService.downloadFile(fileId);
+
+        res.attachment(file.name);
+        res.contentType('application/octet-stream');
+        res.status(200);
+        fileStream.pipe(res);
     });
 
     return router;

@@ -39,6 +39,7 @@ import {
 } from '@azure/communication-chat';
 import { AzureCommunicationUserCredential, RefreshOptions } from '@azure/communication-common';
 import { ChatMessageReceivedEvent } from '@azure/communication-signaling';
+import { setFileBlobUrl } from './actions/FilesAction';
 
 // This function sets up the user to chat with the thread
 const addUserToThread = (displayName: string, emoji: string) => async (dispatch: Dispatch, getState: () => State) => {
@@ -742,6 +743,18 @@ const sendFile = (file: File) => async (dispatch: Dispatch, getState: () => Stat
   }
 };
 
+const getFile = (fileId: string) => async (dispatch: Dispatch, getState: () => State) => {
+  const state = getState();
+  const threadId = state.thread.threadId;
+
+  const response = await fetch(`/thread/${threadId}/files/${fileId}`);
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  // Update file with new blob URL
+  dispatch(setFileBlobUrl(fileId, objectUrl));
+};
+
 export {
   sendMessage,
   getMessages,
@@ -759,4 +772,5 @@ export {
   updateThreadTopicName,
   getThread,
   sendFile,
+  getFile,
 };

@@ -8,9 +8,6 @@ import {
   PresenceAvailableIcon,
   PresenceStrokeIcon,
   RedbangIcon,
-  Attachment,
-  FilesEmptyIcon,
-  DownloadIcon,
 } from '@fluentui/react-northstar';
 import React, { useEffect, useState, createRef, useRef } from 'react';
 import { LiveAnnouncer, LiveMessage } from 'react-aria-live';
@@ -29,7 +26,7 @@ import {
 } from './styles/ChatThread.styles';
 import { User } from '../core/reducers/ContosoClientReducers';
 import { ChatMessageWithClientMessageId } from '../core/reducers/MessagesReducer';
-import FileAttachmentMessage from './FileAttachmentMessage';
+import FileAttachmentMessage from '../containers/FileAttachmentMessage';
 
 interface ChatThreadProps {
   isYourLatestMessage(clientMessageId: string, messages: any[]): boolean;
