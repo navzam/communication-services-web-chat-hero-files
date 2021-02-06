@@ -29,6 +29,7 @@ import {
 } from './styles/ChatThread.styles';
 import { User } from '../core/reducers/ContosoClientReducers';
 import { ChatMessageWithClientMessageId } from '../core/reducers/MessagesReducer';
+import FileAttachmentMessage from './FileAttachmentMessage';
 
 interface ChatThreadProps {
   isYourLatestMessage(clientMessageId: string, messages: any[]): boolean;
@@ -360,17 +361,7 @@ export default (props: ChatThreadProps): JSX.Element => {
                         message={`${message.mine ? 'You ' : message.senderDisplayName} sent a file called ${fileEventMessage.fileName}`}
                         aria-live="polite"
                       />
-                      <Attachment
-                        header={fileEventMessage.fileName}
-                        description={fileEventMessage.fileId}
-                        icon={<FilesEmptyIcon outline />}
-                        action={{
-                          icon: <DownloadIcon />,
-                          onClick: () => console.log(`Download clicked for file ${fileEventMessage.fileId}`),
-                        }}
-                        actionable
-                        onClick={() => console.log(`Attachment clicked for file ${fileEventMessage.fileId}`)}
-                      />
+                      <FileAttachmentMessage fileId={fileEventMessage.fileId} fileName={fileEventMessage.fileName} />
                     </div>
                   )
                   : (
@@ -384,7 +375,7 @@ export default (props: ChatThreadProps): JSX.Element => {
                       {renderHyperlink(message.content)}
                     </div>
                   );
-                  
+
                 return {
                   gutter: message.mine ? (
                     ''
