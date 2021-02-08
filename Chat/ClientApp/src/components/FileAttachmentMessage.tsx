@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Spinner, Stack, Text } from '@fluentui/react';
 import { Attachment, DownloadIcon, FilesEmptyIcon } from '@fluentui/react-northstar';
 import AutoDownloadLink from './AutoDownloadLink';
+import { imageLoadingStackStyle, imagePreviewStyle } from './styles/FileAttachmentMessage.styles';
 
 export interface FileAttachmentMessageProps {
   fileId: string;
@@ -10,8 +12,32 @@ export interface FileAttachmentMessageProps {
   clearFileBlobUrl: (fileId: string) => void;
 }
 
+// Checks if a file is a previewable image based on the filename
+function isPreviewableImage(fileName: string): boolean {
+  return (/\.(png|jpg)$/i).test(fileName);
+}
+
 export default (props: FileAttachmentMessageProps): JSX.Element => {
   const [downloadClicked, setDownloadClicked] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isPreviewableImage(props.fileName) && props.blobUrl === null) {
+      props.downloadFile(props.fileId);
+    }
+  }, [props.fileName, props.blobUrl, props.fileId, props.downloadFile]);
+
+  if (isPreviewableImage(props.fileName)) {
+    return props.blobUrl !== null
+      ? (
+        <img src={props.blobUrl} className={imagePreviewStyle} />
+      )
+      : (
+        <Stack horizontalAlign="center" verticalAlign="center" className={imageLoadingStackStyle}>
+          <Spinner />
+          <Text>Loading image...</Text>
+        </Stack>
+      );
+  }
 
   return (
     <>
