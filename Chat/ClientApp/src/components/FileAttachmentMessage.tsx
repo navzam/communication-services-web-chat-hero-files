@@ -44,9 +44,9 @@ export default (props: FileAttachmentMessageProps): JSX.Element => {
     <>
       <Attachment
         header={props.fileName}
-        description={props.fileId}
         icon={<FilesEmptyIcon outline />}
         action={{
+          styles: { marginLeft: '1rem' },
           icon: <DownloadIcon />,
           loading: downloadClicked,
           disabled: downloadClicked,
