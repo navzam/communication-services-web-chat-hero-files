@@ -3,6 +3,7 @@ export interface FileService {
     addFileMetadata: (threadId: string, fileMetadata: FileMetadata) => Promise<void>;
     downloadFile: (fileId: string) => Promise<NodeJS.ReadableStream>;
     getFileMetadata: (threadId: string, fileId: string) => Promise<FileMetadata>;
+    getFiles: (threadId: string) => Promise<FileMetadata[]>;
 }
 
 export interface FileMetadata {

@@ -6,7 +6,7 @@ import {
   PivotItem,
   Stack,
 } from '@fluentui/react';
-import { UserFriendsIcon, SettingsIcon } from '@fluentui/react-icons-northstar';
+import { UserFriendsIcon, SettingsIcon, FilesEmptyIcon } from '@fluentui/react-icons-northstar';
 import React, { Dispatch } from 'react';
 
 import { ChatThread } from '@azure/communication-chat';
@@ -41,6 +41,8 @@ export default (props: ChatHeaderProps): JSX.Element => {
     if (!item) return;
     if (item.props.itemKey === SidePanelTypes.Settings)
       toggleSettings(props.selectedPane, props.setSelectedPane);
+    if (item.props.itemKey === SidePanelTypes.Files)
+      toggleFiles(props.selectedPane, props.setSelectedPane);
     if (item.props.itemKey === SidePanelTypes.People)
       togglePeople(props.selectedPane, props.setSelectedPane);
   };
@@ -51,6 +53,15 @@ export default (props: ChatHeaderProps): JSX.Element => {
   ) => {
     return selectedPane !== SidePanelTypes.People
       ? setSelectedPane(SidePanelTypes.People)
+      : setSelectedPane(SidePanelTypes.None);
+  };
+
+  const toggleFiles = (
+    selectedPane: SidePanelTypes,
+    setSelectedPane: (pane: SidePanelTypes) => void
+  ) => {
+    return selectedPane !== SidePanelTypes.Files
+      ? setSelectedPane(SidePanelTypes.Files)
       : setSelectedPane(SidePanelTypes.None);
   };
 
@@ -103,6 +114,20 @@ export default (props: ChatHeaderProps): JSX.Element => {
                   <UserFriendsIcon
                     outline={
                       props.selectedPane === SidePanelTypes.People
+                        ? false
+                        : true
+                    }
+                    size="medium"
+                    className={pivotItemStyle}
+                  />
+                )}
+              />
+              <PivotItem
+                itemKey={SidePanelTypes.Files}
+                onRenderItemLink={() => (
+                  <FilesEmptyIcon
+                    outline={
+                      props.selectedPane === SidePanelTypes.Files
                         ? false
                         : true
                     }

@@ -8,12 +8,26 @@ import {
   SET_FAILED_MESSAGES
 } from '../actions/MessagesAction';
 
-export interface ChatMessageWithClientMessageId extends ChatMessage {
+interface ChatMessageWithClientMessageId extends ChatMessage {
   clientMessageId?: string;
 }
 
+export interface NormalChatMessage extends ChatMessageWithClientMessageId {
+  extendedMessageType: 'None',
+}
+
+export interface FileChatMessage extends ChatMessageWithClientMessageId {
+  extendedMessageType: 'FileEvent';
+  fileData: {
+    id: string;
+    name: string;
+  };
+}
+
+export type ExtendedChatMessage = NormalChatMessage | FileChatMessage;
+
 export interface MessagesState {
-  messages: ChatMessageWithClientMessageId[];
+  messages: ExtendedChatMessage[];
   typingNotifications: any;
   typingUsers: any;
   failedMessages: string[];

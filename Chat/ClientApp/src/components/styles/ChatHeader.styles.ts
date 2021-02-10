@@ -87,7 +87,7 @@ const pivotItemStyles: Partial<IPivotStyles> = {
   },
   link: { padding: 0, marginRight: 0, height: 60 },
   root: {
-    width: 84,
+    width: 126,
     height: 60,
     marginRight: '0.5rem',
     display: 'inline-block',

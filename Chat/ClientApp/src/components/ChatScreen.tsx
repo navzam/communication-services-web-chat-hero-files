@@ -17,6 +17,7 @@ interface ChatScreenProps {
   getThreadMembers(): void;
   getThread(): void;
   getMessages(): void;
+  getFiles(): void;
 }
 
 export default (props: ChatScreenProps): JSX.Element => {
@@ -29,6 +30,7 @@ export default (props: ChatScreenProps): JSX.Element => {
 
   useEffect(() => {
     props.getMessages();
+    props.getFiles();
   }, []);
 
   useEffect(() => {

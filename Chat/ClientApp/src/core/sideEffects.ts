@@ -26,7 +26,7 @@ import {
 } from './actions/ThreadMembersAction';
 import { User } from './reducers/ContosoClientReducers';
 import { State } from './reducers/index';
-import { ChatMessageWithClientMessageId } from './reducers/MessagesReducer';
+import { ExtendedChatMessage, NormalChatMessage } from './reducers/MessagesReducer';
 import { compareMessages } from '../utils/utils';
 
 import {
@@ -38,8 +38,32 @@ import {
   GetChatMessageResponse
 } from '@azure/communication-chat';
 import { AzureCommunicationUserCredential, RefreshOptions } from '@azure/communication-common';
-import { ChatMessageReceivedEvent } from '@azure/communication-signaling';
-import { setFileBlobUrl } from './actions/FilesAction';
+import { addFiles, setFileBlobUrl } from './actions/FilesAction';
+
+// Represents a specially-formatted chat message for file upload
+interface FileEventMessageContent {
+  event: 'FileUpload',
+  fileId: string,
+  fileName: string,
+}
+
+// Helper function to try parsing a text chat message as a special File Event message
+const parseFileEventMessageContent = (messageContent: string): FileEventMessageContent | null => {
+  try {
+    const parsedEvent = JSON.parse(messageContent);
+    if (parsedEvent
+      && typeof parsedEvent === 'object'
+      && parsedEvent['event'] === 'FileUpload'
+      && typeof parsedEvent['fileId'] === 'string'
+      && typeof parsedEvent['fileName'] === 'string') {
+        return parsedEvent as FileEventMessageContent;
+    }
+    
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
 
 // This function sets up the user to chat with the thread
 const addUserToThread = (displayName: string, emoji: string) => async (dispatch: Dispatch, getState: () => State) => {
@@ -118,23 +142,40 @@ const subscribeForMessage = async (chatClient: ChatClient, dispatch: Dispatch, g
   await chatClient.startRealtimeNotifications();
   chatClient.on('chatMessageReceived', async (event) => {
     let state: State = getState();
-    let messages: any = state.chat.messages !== undefined ? state.chat.messages : [];
+    let messages: ExtendedChatMessage[] = state.chat.messages !== undefined ? state.chat.messages : [];
 
-    // Ignore user's own message, unless it's a file event (which is sent server-side, so needs to be pushed here)
-    if (event.sender.communicationUserId !== state.contosoClient.user.identity || didReceiveFileEventMessage(event)) {
-      messages.push(event);
+    // If message is a file event, add the file to state
+    // Also add the message to state, since the message was sent server-side and the client doesn't know about it yet
+    const fileEventMessage = parseFileEventMessageContent(event.content);
+    if (fileEventMessage !== null) {
+      dispatch(addFiles([{
+        id: fileEventMessage.fileId,
+        name: fileEventMessage.fileName,
+        uploadDateTime: event.createdOn,
+      }]));
+
+      const fileMessage: any = {
+        ...event,
+        extendedMessageType: 'FileEvent',
+        fileData: {
+          id: fileEventMessage.fileId,
+          name: fileEventMessage.fileName,
+        },
+      };
+      messages.push(fileMessage);
+      dispatch(setMessages(messages.sort(compareMessages)));
+    }
+
+    // Also add messages to state if they were sent by other users (i.e. ignore own messages)
+    else if (event.sender.communicationUserId !== state.contosoClient.user.identity) {
+      const normalMessage: any = {
+        ...event,
+        extendedMessageType: 'None',
+      };
+      messages.push(normalMessage);
       dispatch(setMessages(messages.sort(compareMessages)));
     }
   });
-};
-
-const didReceiveFileEventMessage = (event: ChatMessageReceivedEvent): boolean => {
-  try {
-    const parsedEvent = JSON.parse(event.content);
-    return parsedEvent.event === 'FileUpload';
-  } catch (e) {
-    return false;
-  }
 };
 
 const subscribeForReadReceipt = async (
@@ -213,13 +254,13 @@ const sendMessage = (messageContent: string) => async (dispatch: Dispatch, getSt
   let userId = state.contosoClient.user.identity;
 
   let clientMessageId = (Math.floor(Math.random() * MAXIMUM_INT64) + 1).toString(); //generate a random unsigned Int64 number
-  let newMessage = {
+  let newMessage: NormalChatMessage = {
     content: messageContent,
     clientMessageId: clientMessageId,
     sender: { communicationUserId: userId },
     senderDisplayName: displayName,
-    threadId: threadId,
-    createdOn: undefined
+    createdOn: undefined,
+    extendedMessageType: 'None',
   };
   let messages = getState().chat.messages;
   messages.push(newMessage);
@@ -263,11 +304,33 @@ const getMessages = () => async (dispatch: Dispatch, getState: () => State) => {
     console.error('Thread Id not created yet');
     return;
   }
-  let messages = await getMessagesHelper(await chatClient.getChatThreadClient(threadId), threadId);
-  if (messages === undefined) {
+  let chatMessages = await getMessagesHelper(await chatClient.getChatThreadClient(threadId), threadId);
+  if (chatMessages === undefined) {
     console.error('unable to get messages');
     return;
   }
+
+  // Parse each message and check if it's a file event
+  // If so, set special metadata that can be used during rendering
+  const messages: ExtendedChatMessage[] = chatMessages.map(message => {
+    const fileEventMessage = message.content !== undefined ? parseFileEventMessageContent(message.content) : null;
+    if (fileEventMessage !== null) {
+      return {
+        ...message,
+        extendedMessageType: 'FileEvent',
+        fileData: {
+          id: fileEventMessage.fileId,
+          name: fileEventMessage.fileName,
+        },
+      };
+    }
+
+    return {
+      ...message,
+      extendedMessageType: 'None',
+    };
+  });
+
   return dispatch(setMessages(messages.reverse()));
 };
 
@@ -490,13 +553,15 @@ const sendMessageHelper = async (
           if (message) {
             updateMessagesArray(dispatch, getState, {
               ...message,
-              clientMessageId
+              clientMessageId,
+              extendedMessageType: 'None',
             });
           } else {
             updateMessagesArray(dispatch, getState, {
               clientMessageId: clientMessageId,
               createdOn: new Date(),
-              id: res.id
+              id: res.id,
+              extendedMessageType: 'None',
             });
           }
         }
@@ -550,11 +615,11 @@ const sendMessageHelper = async (
 const updateMessagesArray = async (
   dispatch: Dispatch,
   getState: () => State,
-  newMessage: ChatMessageWithClientMessageId
+  newMessage: ExtendedChatMessage
 ) => {
   let state: State = getState();
-  let messages: ChatMessageWithClientMessageId[] = state.chat.messages !== undefined ? state.chat.messages : [];
-  messages = messages.map((message: ChatMessageWithClientMessageId) => {
+  let messages: ExtendedChatMessage[] = state.chat.messages !== undefined ? state.chat.messages : [];
+  messages = messages.map((message: ExtendedChatMessage) => {
     if (message.clientMessageId === newMessage.clientMessageId) {
       return {
         ...message,
@@ -755,6 +820,21 @@ const getFile = (fileId: string) => async (dispatch: Dispatch, getState: () => S
   dispatch(setFileBlobUrl(fileId, objectUrl));
 };
 
+const getAllFiles = () => async (dispatch: Dispatch, getState: () => State) => {
+  const threadId = getState().thread.threadId;
+
+  const response = await fetch(`/thread/${threadId}/files`);
+  if (!response.ok) {
+    console.error(`Failed to fetch initial files with status ${response.status}`);
+    return;
+  }
+
+  const responseJson: { id: string, name: string, uploadDateTime: string }[] = await response.json();
+
+  // Update files in state with fetched files
+  dispatch(addFiles(responseJson));
+};
+
 export {
   sendMessage,
   getMessages,
@@ -773,4 +853,5 @@ export {
   getThread,
   sendFile,
   getFile,
+  getAllFiles,
 };

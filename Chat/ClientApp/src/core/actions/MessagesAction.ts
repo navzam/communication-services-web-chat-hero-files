@@ -1,4 +1,4 @@
-import { ChatMessageWithClientMessageId } from '../reducers/MessagesReducer';
+import { ExtendedChatMessage } from '../reducers/MessagesReducer';
 
 export const SET_MESSAGES = 'SET_MESSAGES';
 export const SET_TYPING_NOTIFICATIONS = 'SET_TYPING_NOTIFICATIONS';
@@ -7,7 +7,7 @@ export const SET_FAILED_MESSAGES = 'SET_FAILED_MESSAGES';
 
 export interface SetMessagesAction {
   type: typeof SET_MESSAGES;
-  messages: ChatMessageWithClientMessageId[];
+  messages: ExtendedChatMessage[];
 }
 
 export interface SetTypingNotificationsAction {
@@ -26,7 +26,7 @@ export interface SetFailedMessagesAction {
   failedMessages: any;
 }
 
-export const setMessages = (messages: ChatMessageWithClientMessageId[]): SetMessagesAction => ({
+export const setMessages = (messages: ExtendedChatMessage[]): SetMessagesAction => ({
   type: SET_MESSAGES,
   messages
 });

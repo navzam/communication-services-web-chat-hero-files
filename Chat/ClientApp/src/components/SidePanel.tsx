@@ -17,9 +17,12 @@ import { ENTER_KEY, MAXIMUM_LENGTH_OF_TOPIC } from '../../src/constants';
 import { getEmoji } from '../core/sideEffects';
 import InviteFooter from './InviteFooter';
 import MemberItem from './MemberItem';
+import FileAttachmentMessage from '../containers/FileAttachmentMessage';
 import { inputBoxTextStyle } from './styles/ConfigurationScreen.styles';
 import {
   memberListStyle,
+  filesListStyle,
+  filesListTokens,
   settingsListStyle,
   saveChatNameButtonStyle,
   sidePanelContainerStyle,
@@ -35,6 +38,7 @@ interface SidePanelProps {
   updateThreadTopicName(topicName: string, setIsSavingTopicName: React.Dispatch<boolean>): void;
   users: any;
   threadMembers: ChatThreadMember[];
+  files: SidePanelFile[];
   identity: string;
   selectedPane: SidePanelTypes;
   setSelectedPane: Dispatch<SidePanelTypes>;
@@ -45,9 +49,16 @@ interface SidePanelProps {
   setRemoveThreadMemberError(removeError: boolean): void;
 }
 
+export interface SidePanelFile {
+  id: string;
+  name: string;
+  uploadDateTime: string;
+}
+
 export enum SidePanelTypes {
   None = 'none',
   People = 'People',
+  Files = 'Files',
   Settings = 'Settings',
 }
 
@@ -149,6 +160,21 @@ export default (props: SidePanelProps): JSX.Element => {
         </StackItem>
         {/* Invite link footer */}
         <InviteFooter />
+      </Stack>
+      <Stack
+        verticalAlign="space-between"
+        className={sidePanelContainerStyle(
+          props.selectedPane === SidePanelTypes.Files
+        )}
+      >
+        {/* Title */}
+        <div className={titleStyle}>Files</div>
+        {/* File list */}
+        <Stack className={filesListStyle} tokens={filesListTokens}>
+          {props.files.map(file =>
+            <FileAttachmentMessage fileId={file.id} fileName={file.name} key={file.id} />
+          )}
+        </Stack>
       </Stack>
       <Stack
         verticalAlign="space-between"

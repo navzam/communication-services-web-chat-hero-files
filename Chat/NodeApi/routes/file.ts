@@ -71,6 +71,19 @@ export default function createFileRouter(acsConnectionString: string, fileServic
         return res.sendStatus(204);
     });
 
+    // Get all files for thread
+    router.get('/', async (req, res) => {
+        const threadId = req.params['threadId'];
+        
+        if (threadId === undefined || threadId.length === 0) {
+            return res.status(404);
+        }
+
+        const files = await fileService.getFiles(threadId);
+
+        return res.status(200).send(files);
+    });
+
     router.get('/:fileId', async (req, res) => {
         const threadId = req.params['threadId'];
         const fileId = req.params['fileId'];

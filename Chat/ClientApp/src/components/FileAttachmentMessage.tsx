@@ -8,6 +8,7 @@ export interface FileAttachmentMessageProps {
   fileId: string;
   fileName: string;
   blobUrl: string | null;
+  showPreview?: boolean;
   downloadFile: (fileId: string) => void;
   clearFileBlobUrl: (fileId: string) => void;
 }
@@ -21,12 +22,12 @@ export default (props: FileAttachmentMessageProps): JSX.Element => {
   const [downloadClicked, setDownloadClicked] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isPreviewableImage(props.fileName) && props.blobUrl === null) {
+    if (props.showPreview && isPreviewableImage(props.fileName) && props.blobUrl === null) {
       props.downloadFile(props.fileId);
     }
-  }, [props.fileName, props.blobUrl, props.fileId, props.downloadFile]);
+  }, [props.showPreview, props.fileName, props.blobUrl, props.fileId, props.downloadFile]);
 
-  if (isPreviewableImage(props.fileName)) {
+  if (props.showPreview && isPreviewableImage(props.fileName)) {
     return props.blobUrl !== null
       ? (
         <img src={props.blobUrl} className={imagePreviewStyle} />
@@ -67,8 +68,12 @@ export default (props: FileAttachmentMessageProps): JSX.Element => {
           downloadName={props.fileName}
           onTriggered={() => {
             setDownloadClicked(false);
-            props.clearFileBlobUrl(props.fileId);
-            // TODO: should also revoke the object URL somewhere
+            
+            // Don't clear blob URLs for previewable images since the URLs are useful for previews
+            if (!isPreviewableImage(props.fileName)) {
+              props.clearFileBlobUrl(props.fileId);
+              // TODO: should also revoke the object URL somewhere
+            }
           }}
         />
       }

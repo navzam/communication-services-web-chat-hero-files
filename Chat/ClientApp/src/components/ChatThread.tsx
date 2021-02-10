@@ -25,7 +25,7 @@ import {
   DownIconStyle,
 } from './styles/ChatThread.styles';
 import { User } from '../core/reducers/ContosoClientReducers';
-import { ChatMessageWithClientMessageId } from '../core/reducers/MessagesReducer';
+import { ExtendedChatMessage } from '../core/reducers/MessagesReducer';
 import FileAttachmentMessage from '../containers/FileAttachmentMessage';
 
 interface ChatThreadProps {
@@ -37,16 +37,10 @@ interface ChatThreadProps {
   isLargeParticipantsGroup(): boolean;
   isMessageSeen(clientMessageId: string, messages: any[]): boolean;
   sendReadReceipt(messages: any[], userId: string): void;
-  messages: ChatMessageWithClientMessageId[];
+  messages: ExtendedChatMessage[];
   user: User;
   users: any;
   failedMessages: string[];
-}
-
-interface FileEventMessage {
-  event: 'FileUpload';
-  fileId: string;
-  fileName: string;
 }
 
 // Reference: https://stackoverflow.com/questions/33235890/react-replace-links-in-a-text
@@ -257,29 +251,29 @@ export default (props: ChatThreadProps): JSX.Element => {
       indexOfTheFirstMessage,
       props.messages.length
     );
-    messagesToRender.map((message: any, index: number, messagesList: any) => {
-      let mine = message.sender.communicationUserId === props.user.identity;
+    messagesToRender.map((message, index: number, messagesList) => {
+      let mine = message.sender?.communicationUserId === props.user.identity;
       let attached: string | boolean = false;
       if (index === 0) {
         if (index !== messagesList.length - 1) {
           //the next message has the same sender
           if (
-            messagesList[index].sender.communicationUserId ===
-            messagesList[index + 1].sender.communicationUserId
+            messagesList[index].sender?.communicationUserId ===
+            messagesList[index + 1].sender?.communicationUserId
           ) {
             attached = 'top';
           }
         }
       } else {
         if (
-          messagesList[index].sender.communicationUserId ===
-          messagesList[index - 1].sender.communicationUserId
+          messagesList[index].sender?.communicationUserId ===
+          messagesList[index - 1].sender?.communicationUserId
         ) {
           //the previous message has the same sender
           if (index !== messagesList.length - 1) {
             if (
-              messagesList[index].sender.communicationUserId ===
-              messagesList[index + 1].sender.communicationUserId
+              messagesList[index].sender?.communicationUserId ===
+              messagesList[index + 1].sender?.communicationUserId
             ) {
               //the next message has the same sender
               attached = true;
@@ -295,8 +289,8 @@ export default (props: ChatThreadProps): JSX.Element => {
           //the previous message has a different sender
           if (index !== messagesList.length - 1) {
             if (
-              messagesList[index].sender.communicationUserId ===
-              messagesList[index + 1].sender.communicationUserId
+              messagesList[index].sender?.communicationUserId ===
+              messagesList[index + 1].sender?.communicationUserId
             ) {
               //the next message has the same sender
               attached = 'top';
@@ -308,25 +302,6 @@ export default (props: ChatThreadProps): JSX.Element => {
       newMessagesWithAttached.push(messageWithAttached);
     });
     setMessagesWithAttachedRef(newMessagesWithAttached);
-  };
-
-  // Checks if a message is a file event and, if so, returns it
-  const getFileEventFromMessage = (messageContent: string): FileEventMessage | null => {
-    try {
-      const messageContentJson = JSON.parse(messageContent);
-      if (messageContentJson
-        && typeof messageContentJson === 'object'
-        && messageContentJson['event'] === 'FileUpload'
-        && typeof messageContentJson['fileId'] === 'string'
-        && typeof messageContentJson['fileName'] === 'string') {
-          return messageContentJson as FileEventMessage;
-        }
-
-        return null;
-    } catch (e) {
-      // Not a file upload event
-      return null;
-    }
   };
 
   return (
@@ -350,15 +325,14 @@ export default (props: ChatThreadProps): JSX.Element => {
               styles={chatStyle}
               items={messagesWithAttached.map((message: any, index: number) => {
                 const liveAuthor = `${message.senderDisplayName} says `;
-                const fileEventMessage = getFileEventFromMessage(message.content);
-                const messageContentItem = fileEventMessage !== null
+                const messageContentItem = message.extendedMessageType === 'FileEvent'
                   ? (
                     <div>
                       <LiveMessage
-                        message={`${message.mine ? 'You ' : message.senderDisplayName} sent a file called ${fileEventMessage.fileName}`}
+                        message={`${message.mine ? 'You ' : message.senderDisplayName} sent a file called ${message.fileData.name}`}
                         aria-live="polite"
                       />
-                      <FileAttachmentMessage fileId={fileEventMessage.fileId} fileName={fileEventMessage.fileName} />
+                      <FileAttachmentMessage fileId={message.fileData.id} fileName={message.fileData.name} showPreview />
                     </div>
                   )
                   : (

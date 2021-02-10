@@ -48,7 +48,7 @@ const copyLinkTextStyle = mergeStyles({
 const sidePanelContainerStyle = (showSidePanel: boolean) =>
   mergeStyles({
     height: '100%',
-    width: '17.813rem', // 285px
+    width: '20rem', // 320px
     display: showSidePanel ? 'flex' : 'none',
     borderLeft: '0.063rem solid #DDDDDD'
   });
@@ -68,6 +68,18 @@ const memberListStyle = mergeStyles({
   maxHeight: '100%',
   overflow: 'auto'
 });
+
+const filesListStyle = mergeStyles({
+  height: '100%',
+  width: '100%',
+  maxHeight: '100%',
+  overflow: 'auto'
+});
+
+const filesListTokens: IStackTokens = {
+  childrenGap: "0.5rem",
+  padding: "0.5rem",
+};
 
 const settingsListStyle = mergeStyles({
   height: '100%',
@@ -229,6 +241,8 @@ export {
   sidePanelContainerStyle,
   titleStyle,
   memberListStyle,
+  filesListStyle,
+  filesListTokens,
   settingsListStyle,
   textFieldIconStyle,
   chatNameTextFieldStyle,

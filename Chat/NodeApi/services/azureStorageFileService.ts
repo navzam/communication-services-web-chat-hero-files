@@ -75,6 +75,27 @@ export class AzureStorageFileService implements FileService {
         }
     }
 
+    async getFiles(threadId: string): Promise<FileMetadata[]> {
+        const tableClient = TableClient.fromConnectionString(this.storageConnectionString, this.tableName);
+        await AzureStorageFileService.ensureTableCreated(tableClient);
+
+        const entitiesIter = tableClient.listEntities<TableStorageFileMetadata>({
+            queryOptions: {
+                filter: `PartitionKey eq '${threadId}'`,
+            },
+        });
+        const files: FileMetadata[] = [];
+        for await (const entity of entitiesIter) {
+            files.push({
+                id: entity.FileId,
+                name: entity.FileName,
+                uploadDateTime: entity.UploadDateTime,
+            });
+        }
+
+        return files;
+    }
+
     private static async ensureBlobContainerCreated(containerClient: ContainerClient): Promise<void> {
         await containerClient.createIfNotExists();
     }
