@@ -7,8 +7,10 @@ import createUserConfigRouter from './routes/userConfig';
 import createChatThreadRouter from './routes/chatThread';
 import createTokenRouter from './routes/token';
 import { extractApiChatGatewayUrl } from './utils';
+import { UserConfigService } from './services/userConfigService';
+import { InMemoryUserConfigService } from './services/inMemoryUserConfigService';
 import { FileService } from './services/fileService';
-import { AzureStorageFileService } from './services/azureStorageFileService'
+import { AzureStorageFileService } from './services/azureStorageFileService';
 
 const [
     acsConnectionString,
@@ -30,6 +32,7 @@ const fileMetadataTableName = 'fileMetadata';
 
 const chatGatewayUrl = extractApiChatGatewayUrl(acsConnectionString);
 
+const userConfigService: UserConfigService = new InMemoryUserConfigService();
 const fileService: FileService = new AzureStorageFileService(storageConnectionString, blobContainerName, fileMetadataTableName);
 
 const app = express();
@@ -41,8 +44,8 @@ app.get('/getEnvironmentUrl', async (req, res) => {
 });
 
 app.use('/token', createTokenRouter(acsConnectionString));
-app.use('/userConfig', createUserConfigRouter());
-app.use('/thread', createChatThreadRouter(acsConnectionString, fileService));
+app.use('/userConfig', createUserConfigRouter(userConfigService));
+app.use('/thread', createChatThreadRouter(acsConnectionString, fileService, userConfigService));
 
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at https://localhost:${PORT}`);

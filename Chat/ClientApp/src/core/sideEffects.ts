@@ -99,7 +99,7 @@ const addUserToThread = (displayName: string, emoji: string) => async (dispatch:
   let chatClient = new ChatClient(environmentUrl, userAccessTokenCredentialNew);
 
   // set emoji for the user
-  setEmoji(userToken.user.id, emoji);
+  setEmoji(userToken.user.id, displayName, emoji);
 
   // subscribe for message, typing indicator, and read receipt
   let chatThreadClient = await chatClient.getChatThreadClient(threadId);
@@ -730,12 +730,12 @@ const refreshTokenAsync = async (userIdentity: string) : Promise<string>=> {
   })
 }
 
-const setEmoji = async (userId: string, emoji: string) => {
+const setEmoji = async (userId: string, name: string, emoji: string) => {
   try {
     let getTokenRequestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Emoji: emoji })
+      body: JSON.stringify({ Name: name, Emoji: emoji })
     };
     await (await fetch('/userConfig/' + userId, getTokenRequestOptions)).json;
   } catch (error) {
@@ -792,7 +792,6 @@ const sendFile = (file: File) => async (dispatch: Dispatch, getState: () => Stat
   data.append('file', file);
   data.append('fileName', file.name);
   data.append('userId', userId);
-  data.append('userDisplayName', userDisplayName);
 
   const sendFileRequestOptions: RequestInit = {
     method: 'POST',

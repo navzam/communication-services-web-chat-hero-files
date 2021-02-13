@@ -4,6 +4,7 @@ import express from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
+import { ContosoUserConfigModel, UserConfigService, UserConfigServiceError } from '../services/userConfigService';
 import { FileMetadata, FileService, FileServiceError } from '../services/fileService';
 import * as tokenManager from '../tokenManager';
 import { extractApiChatGatewayUrl } from '../utils';
@@ -11,10 +12,9 @@ import { extractApiChatGatewayUrl } from '../utils';
 interface UploadFileRequestBody {
     fileName?: string;
     userId?: string;
-    userDisplayName?: string;
 }
 
-export default function createFileRouter(acsConnectionString: string, fileService: FileService) {
+export default function createFileRouter(acsConnectionString: string, fileService: FileService, userConfigService: UserConfigService) {
     const uploadMiddleware = multer({ limits: { fieldSize: 5 * 1024 * 1024 } });
     const chatGatewayUrl = extractApiChatGatewayUrl(acsConnectionString);
 
@@ -40,8 +40,15 @@ export default function createFileRouter(acsConnectionString: string, fileServic
             return res.status(400).send("Invalid user ID");
         }
 
-        if (body.userDisplayName === undefined || body.userDisplayName.length === 0) {
-            return res.status(400).send("Invalid user display name");
+        let user: ContosoUserConfigModel;
+        try {
+            user = await userConfigService.getUser(body.userId);
+        } catch (e) {
+            if (e instanceof UserConfigServiceError && e.type === 'UserNotFound') {
+                return res.sendStatus(403);
+            }
+            
+            throw e;
         }
 
         // Upload file to storage
@@ -66,7 +73,7 @@ export default function createFileRouter(acsConnectionString: string, fileServic
             fileId: newFileId,
             fileName: body.fileName,
         };
-        await chatThreadClient.sendMessage({ content: JSON.stringify(fileMessage) }, { senderDisplayName: body.userDisplayName });
+        await chatThreadClient.sendMessage({ content: JSON.stringify(fileMessage) }, { senderDisplayName: user.name });
 
         return res.sendStatus(204);
     });

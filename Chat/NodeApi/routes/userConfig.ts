@@ -1,23 +1,25 @@
 import express from 'express';
-
-interface ContosoUserConfigModel {
-    emoji: string;
-}
+import { ContosoUserConfigModel, UserConfigService, UserConfigServiceError } from '../services/userConfigService';
 
 interface UserConfigRequestBody {
+    Name: string;
     Emoji: string;
 }
 
-export default function createUserConfigRouter() {
-    const userStore = new Map<string, ContosoUserConfigModel>();
-
+export default function createUserConfigRouter(userConfigService: UserConfigService) {
     const router = express.Router();
 
     router.post('/:userId', async (req, res) => {
         const userId = req.params['userId'];
         const body = req.body as UserConfigRequestBody;
 
-        userStore.set(userId, { emoji: body.Emoji });
+        try {
+            await userConfigService.addUser(userId, { name: body.Name, emoji: body.Emoji });
+        } catch (e) {
+            if (e instanceof UserConfigServiceError && e.type === 'UserAlreadyExists') {
+                return res.sendStatus(400);
+            }
+        }
 
         return res.sendStatus(200);
     });
@@ -25,9 +27,15 @@ export default function createUserConfigRouter() {
     router.get('/:userId', async (req, res) => {
         const userId = req.params['userId'];
 
-        const user = userStore.get(userId);
-        if (user === undefined) {
-            return res.sendStatus(404);
+        let user: ContosoUserConfigModel;
+        try {
+            user = await userConfigService.getUser(userId);
+        } catch (e) {
+            if (e instanceof UserConfigServiceError && e.type === 'UserNotFound') {
+                return res.sendStatus(404);
+            }
+            
+            throw e;
         }
 
         return res.status(200).send(user);

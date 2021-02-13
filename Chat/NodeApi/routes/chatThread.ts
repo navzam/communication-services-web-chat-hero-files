@@ -7,6 +7,7 @@ import createFileRouter from './file';
 import { FileService } from '../services/fileService';
 import * as tokenManager from '../tokenManager';
 import { extractApiChatGatewayUrl } from '../utils';
+import { UserConfigService } from '../services/userConfigService';
 
 interface AddUserToThreadRequestBody {
     id: string;
@@ -15,7 +16,7 @@ interface AddUserToThreadRequestBody {
 
 const GUID_FOR_INITIAL_TOPIC_NAME: string = "c774da81-94d5-4652-85c7-6ed0e8dc67e6";
 
-export default function createChatThreadRouter(acsConnectionString: string, fileService: FileService) {
+export default function createChatThreadRouter(acsConnectionString: string, fileService: FileService, userConfigService: UserConfigService) {
     const chatGatewayUrl = extractApiChatGatewayUrl(acsConnectionString);
     const threadStore = new Map<string, CommunicationUserToken>();
 
@@ -88,7 +89,7 @@ export default function createChatThreadRouter(acsConnectionString: string, file
         }
     });
 
-    router.use('/:threadId/files', createFileRouter(acsConnectionString, fileService));
+    router.use('/:threadId/files', createFileRouter(acsConnectionString, fileService, userConfigService));
 
     return router;
 }
